@@ -21,6 +21,11 @@ def remap_unicode(font_path: str, remap_config: Dict[str, Dict[str, str]]):
     cmap = font['cmap'].getcmap(3, 1).cmap  # Windows Unicode BMP (UCS-2)
     print(f"Original cmap: {cmap}")  # Debugging statement
 
+    # Update this section to safely access the remap configuration
+    if not isinstance(remap_config, dict) or 'remap' not in remap_config:
+        print(f"Invalid remap configuration: {remap_config}")
+        return
+        
     for keyboard_unicode, font_unicode in remap_config['remap'].items():
         keyboard_unicode = int(keyboard_unicode, 16)
         font_unicode = int(font_unicode, 16)
@@ -45,7 +50,12 @@ def remap_unicode(font_path: str, remap_config: Dict[str, Dict[str, str]]):
 
 def process_fonts(config: Dict[str, Any]):
     print(f"Processing fonts...")
-    remap_dict = config.get('remap', {})
+    # Update this section to safely handle the remap configuration
+    if not isinstance(config, dict):
+        print("Invalid configuration format")
+        return
+        
+    remap_dict = {'remap': config.get('remap', {})}  # Wrap in expected structure
     skip_eot = config.get('skip_eot', False)
     
     # Ensure fonts directory exists
