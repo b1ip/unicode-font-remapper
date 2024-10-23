@@ -1,0 +1,11 @@
+# Backup folders
+*_backup/
+*_backup/*
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Font files (optional, uncomment if you don't want to track font files)
+# fonts/*
+

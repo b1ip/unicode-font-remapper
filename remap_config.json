@@ -1,0 +1,7 @@
+{
+    "remap": {
+        "0x21b": "0x163"
+    },
+    "folder_path": "font_set",
+    "skip_eot": true
+}

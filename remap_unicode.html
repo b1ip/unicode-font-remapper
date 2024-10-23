@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Unicode Remapping Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            padding: 1rem 0;
+            overflow-y: auto;
+            align-items: flex-start;
+        }
+        .container {
+            margin: auto 0;
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 600px;
+        }
+        .block {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #8A2BE2;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .block input {
+            font-size: 1em;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: calc(50% - 10px);
+            box-sizing: border-box;
+            margin-top: 8px;
+        }
+        .block div {
+            font-size: 0.9em;
+            margin-top: 3px;
+        }
+        button {
+            font-size: 1em;
+            padding: 8px;
+            border: 1px solid #8A2BE2;
+            border-radius: 4px;
+            background-color: #8A2BE2;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 8px;
+        }
+        button:hover {
+            background-color: #6A1BB2;
+        }
+        #output {
+            font-size: 1em;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+        .gap {
+            margin-top: 15px;
+        }
+        #downloadSection {
+            margin-top: 15px;
+            display: none;  /* Hidden by default */
+        }
+        
+        .download-button {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        .download-button:hover {
+            background-color: #45a049;
+        }
+        
+        @media screen and (min-height: 800px) {
+            .container {
+                margin: auto;
+            }
+        }
+        .input-choice {
+            margin: 10px 0;
+            text-align: left;
+        }
+        .input-choice label {
+            margin-right: 20px;
+        }
+        #folderInput, #filesInput {
+            margin-top: 10px;
+        }
+        .help-text {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 3px;
+            font-style: italic;
+        }
+        .block p {
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="remapBlocks"></div>
+        <button id="addPair">Add Remapping Pair</button>
+        <div class="gap"></div>
+        <div class="block">
+            <p>Choose one option (all files must be in the project's 'fonts' folder):</p>
+            <div class="input-choice">
+                <label>
+                    <input type="radio" name="inputType" value="folder" checked> Select Subfolder in fonts/
+                </label>
+                <label>
+                    <input type="radio" name="inputType" value="files"> Select Files in fonts/
+                </label>
+            </div>
+            <div id="folderInput">
+                <input type="text" id="folderPath" placeholder="Enter subfolder name in fonts/ (e.g., metronic_pro)">
+                <div class="help-text">The folder should be located in the project's fonts directory</div>
+            </div>
+            <div id="filesInput" style="display: none;">
+                <input type="file" id="fileInput" multiple accept=".ttf,.otf,.woff,.woff2,.eot">
+                <div class="help-text">Select font files from the project's fonts directory</div>
+                <div id="selectedFiles"></div>
+            </div>
+        </div>
+        <div class="block">
+            <label>
+                <input type="checkbox" id="skipEot"> Skip EOT files
+            </label>
+        </div>
+        <button id="generateConfig">Generate Configuration</button>
+        <div id="downloadSection">
+            <div id="output"></div>
+            <button id="downloadConfig" class="download-button">Download Configuration</button>
+        </div>
+    </div>
+    <script>
+        const remapBlocks = document.getElementById('remapBlocks');
+        const addPair = document.getElementById('addPair');
+        const generateConfig = document.getElementById('generateConfig');
+        const downloadConfig = document.getElementById('downloadConfig');
+        const output = document.getElementById('output');
+        const folderPath = document.getElementById('folderPath');
+        const selectedFiles = document.getElementById('selectedFiles');
+        const skipEot = document.getElementById('skipEot');
+        const downloadSection = document.getElementById('downloadSection');
+
+        function formatUnicode(value) {
+            return 'U+' + value.toString(16).toUpperCase().padStart(4, '0');
+        }
+
+        function createRemapBlock() {
+            const block = document.createElement('div');
+            block.className = 'block';
+
+            const keyboardCharInput = document.createElement('input');
+            keyboardCharInput.type = 'text';
+            keyboardCharInput.placeholder = 'Keyboard Character';
+            const keyboardCharUnicode = document.createElement('div');
+
+            const fontCharInput = document.createElement('input');
+            fontCharInput.type = 'text';
+            fontCharInput.placeholder = 'Existing Font Character';
+            const fontCharUnicode = document.createElement('div');
+
+            keyboardCharInput.addEventListener('input', function() {
+                const unicode = keyboardCharInput.value.codePointAt(0);
+                keyboardCharUnicode.textContent = unicode ? formatUnicode(unicode) : '';
+            });
+
+            fontCharInput.addEventListener('input', function() {
+                const unicode = fontCharInput.value.codePointAt(0);
+                fontCharUnicode.textContent = unicode ? formatUnicode(unicode) : '';
+            });
+
+            block.appendChild(keyboardCharInput);
+            block.appendChild(keyboardCharUnicode);
+            block.appendChild(fontCharInput);
+            block.appendChild(fontCharUnicode);
+
+            remapBlocks.appendChild(block);
+        }
+
+        const inputTypeRadios = document.getElementsByName('inputType');
+        const folderInput = document.getElementById('folderInput');
+        const filesInput = document.getElementById('filesInput');
+
+        inputTypeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'folder') {
+                    folderInput.style.display = 'block';
+                    filesInput.style.display = 'none';
+                } else {
+                    folderInput.style.display = 'none';
+                    filesInput.style.display = 'block';
+                }
+            });
+        });
+
+        folderPath.addEventListener('input', function() {
+            const files = Array.from(this.files);
+            const fileList = files.map(file => file.name).join(', ');
+            selectedFiles.textContent = `Selected files: ${fileList}`;
+            
+            // Store the relative paths
+            window.selectedFontFiles = files.map(file => file.name);
+        });
+
+        addPair.addEventListener('click', createRemapBlock);
+
+        generateConfig.addEventListener('click', function() {
+            const remap = {};
+            const blocks = remapBlocks.getElementsByClassName('block');
+
+            for (const block of blocks) {
+                const keyboardCharInput = block.querySelector('input:nth-child(1)');
+                const fontCharInput = block.querySelector('input:nth-child(3)');
+                
+                if (keyboardCharInput.value && fontCharInput.value) {
+                    const keyboardUnicode = keyboardCharInput.value.codePointAt(0).toString(16);
+                    const fontUnicode = fontCharInput.value.codePointAt(0).toString(16);
+                    remap[`0x${keyboardUnicode}`] = `0x${fontUnicode}`;
+                }
+            }
+
+            const config = {
+                remap: remap,
+                skip_eot: skipEot.checked
+            };
+
+            // Add either folder_path or files based on selection
+            if (document.querySelector('input[name="inputType"]:checked').value === 'folder') {
+                config.folder_path = document.getElementById('folderPath').value;
+            } else {
+                config.files = Array.from(document.getElementById('fileInput').files).map(file => file.name);
+            }
+
+            output.textContent = JSON.stringify(config, null, 4);
+            downloadSection.style.display = 'block';
+        });
+
+        downloadConfig.addEventListener('click', function() {
+            const blob = new Blob([output.textContent], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'remap_config.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Initialize with one remap block
+        createRemapBlock();
+    </script>
+</body>
+</html>
